@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { questions } from '../data/questions';
-import { Button } from 'antd';
+import { Button, Input, message } from 'antd';
 
 const LevelList = () => {
   const [completedLevels, setCompletedLevels] = useState([]);
   const [timeLeft, setTimeLeft] = useState(getTimeLeftUntilTomorrow());
+  const [secretCode, setSecretCode] = useState('');
+  const [codeUsed, setCodeUsed] = useState(false);
 
   useEffect(() => {
     const completed = JSON.parse(localStorage.getItem('completedLevels') || '[]');
@@ -15,8 +17,29 @@ const LevelList = () => {
       setTimeLeft(getTimeLeftUntilTomorrow());
     }, 1000);
 
+    const codeUsedStatus = localStorage.getItem('codeUsed');
+    setCodeUsed(codeUsedStatus === 'true');
+
     return () => clearInterval(timer);
   }, []);
+
+  const handleSecretCodeSubmit = () => {
+    if (codeUsed) {
+      message.error('Вы уже использовали код.');
+      return;
+    }
+
+    if (secretCode === '112') {
+      const currentScore = parseInt(localStorage.getItem('score') || '0');
+      const newScore = currentScore + 500;
+      localStorage.setItem('score', newScore);
+      setCodeUsed(true);
+      localStorage.setItem('codeUsed', 'true');
+      message.success('Код верный! Вам добавлено 500 бонусов.');
+    } else {
+      message.error('Неверный код.');
+    }
+  };
 
   const levels = questions.map(q => q.level);
 
@@ -29,9 +52,25 @@ const LevelList = () => {
 
   return (
     <>
+    <div className="bg-yellow-200 mb-6 p-6 rounded-lg shadow-md mt-4">
+        <h1 className="text-2xl font-bold mb-4">Секретный код</h1>
+        <p>Введите секретный код, найденный в игре, чтобы получить бонусы.</p>
+        <Input
+          placeholder="Введите секретный код"
+          value={secretCode}
+          onChange={(e) => setSecretCode(e.target.value)}
+          style={{ marginBottom: '10px' }}
+        />
+        <Button type="primary" onClick={handleSecretCodeSubmit} style={{ marginRight: '10px' }}>
+          Отправить
+        </Button>
+        <Button type="default">
+          <a target='blank' href="https://app.spline.design/file/c7368dc1-f32e-492b-8fc9-842ce0b60985">Перейти на игру</a>
+        </Button>
+      </div>
       <div className="bg-yellow-200 p-4 mb-4 rounded-lg shadow-md">
         <h2 className="text-xl font-bold">Коллаборация МЧС X Halyk Bank</h2>
-        <p>При прохождении уровней дается 1 халык бонус = 1 тенге.</p>
+        <p>При прохождении уровней дается1 халык бонус = 1 тенге.</p>
       </div>
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h1 className="text-2xl font-bold mb-4">Доступные уровни</h1>
@@ -54,6 +93,7 @@ const LevelList = () => {
           </div>
         </div>
       </div>
+      
       {completedLevels.length > 0 && (
         <div className="bg-white p-6 rounded-lg shadow-md mt-4">
           <h1 className="text-2xl font-bold mb-4">Завершенные уровни</h1>
